@@ -1,0 +1,19 @@
+# Node modules
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.env
+
+# Project specific excludes
+synopsys.md
+
+# OS specific
+.DS_Store
+Thumbs.db

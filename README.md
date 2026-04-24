@@ -2,7 +2,7 @@
 title: IRIS Intelligent Resource Inference Scheduler
 emoji: 🧠
 colorFrom: indigo
-colorTo: cyan
+colorTo: blue
 sdk: docker
 pinned: false
 ---

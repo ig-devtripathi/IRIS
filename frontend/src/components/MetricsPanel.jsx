@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer,
   CartesianGrid, ReferenceLine, Legend,
@@ -24,9 +24,49 @@ const METRIC_LABELS = {
   starved_count: { label: 'Starvation Count', unit: '', lowerBetter: true },
 };
 
+// Step 3: Count-up animation component
+function AnimatedValue({ value, formatFn, duration = 800, skip = false }) {
+  const [display, setDisplay] = useState(skip ? value : 0);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    if (skip || value == null) {
+      setDisplay(value);
+      return;
+    }
+
+    const startTime = performance.now();
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(value * eased);
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplay(value);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [value, duration, skip]);
+
+  return formatFn(display);
+}
+
 export default function MetricsPanel({ metrics }) {
   const [showFairnessTooltip, setShowFairnessTooltip] = useState(false);
   const [showCompositeTooltip, setShowCompositeTooltip] = useState(false);
+  const [barsVisible, setBarsVisible] = useState(false);
+
+  // Step 6: Trigger weight bar animation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setBarsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const { iris, round_robin, sjf, winner } = metrics;
   const algos = [
@@ -39,14 +79,44 @@ export default function MetricsPanel({ metrics }) {
 
   const isWinner = (algoName, metricKey) => winner[metricKey] === algoName;
 
-  const formatValue = (key, value, algoName) => {
-    // RULE 10: IRIS starved_count always shows "0 ✓"
-    if (key === 'starved_count' && algoName === 'IRIS') {
-      return <span className="text-[#10b981] font-bold">0 ✓</span>;
+  const renderStarvationCell = (count, algoName, winnerAlgo) => {
+    const isWinner = winnerAlgo === algoName;
+    const isZero = count === 0;
+
+    if (isWinner && isZero) {
+      // Green winner cell with tick and crown
+      return (
+        <td key={algoName} className="px-4 py-3 text-center bg-[#10b981]/10 border border-[#10b981]/30 rounded-lg">
+          <span className="text-[#10b981] font-bold text-sm">
+            👑 0 ✓
+          </span>
+        </td>
+      );
     }
-    if (key === 'starved_count' && value > 0) {
-      return <span className="text-[#ef4444] font-bold">{value} ⚠</span>;
+
+    if (isZero) {
+      // Zero but not winner — still green tick, no crown
+      return (
+        <td key={algoName} className="px-4 py-3 text-center">
+          <span className="text-[#10b981] font-semibold text-sm">
+            0 ✓
+          </span>
+        </td>
+      );
     }
+
+    // Non-zero — red warning
+    return (
+      <td key={algoName} className="px-4 py-3 text-center">
+        <span className="text-[#ef4444] font-semibold text-sm flex items-center justify-center gap-1">
+          <span>⚠</span>
+          <span>{count}</span>
+        </span>
+      </td>
+    );
+  };
+
+  const formatValue = (key, value) => {
     if (key === 'fairness_index') return value.toFixed(4);
     if (key === 'cpu_utilization') return `${value.toFixed(1)}%`;
     return value.toFixed(2);
@@ -67,9 +137,8 @@ export default function MetricsPanel({ metrics }) {
 
   const starvationChartData = algos.map((a) => ({
     name: a.name,
-    // RULE 10: IRIS always shows 0
-    value: a.name === 'IRIS' ? 0 : a.data.starved_count,
-    color: a.name === 'IRIS' ? '#10b981' : a.data.starved_count > 0 ? '#ef4444' : a.color,
+    value: a.data.starved_count,
+    color: a.data.starved_count === 0 ? '#10b981' : '#ef4444',
   }));
 
   return (
@@ -134,6 +203,10 @@ export default function MetricsPanel({ metrics }) {
                     </div>
                   </td>
                   {algos.map((a) => {
+                    if (key === 'starved_count') {
+                      return renderStarvationCell(a.data.starved_count, a.name, winner[key]);
+                    }
+
                     const won = isWinner(a.name, key);
                     return (
                       <td
@@ -144,8 +217,12 @@ export default function MetricsPanel({ metrics }) {
                           }`}
                       >
                         {won && '👑 '}
-                        {formatValue(key, a.data[key], a.name)}
-                        {meta.unit && !['%'].includes(meta.unit) && key !== 'starved_count' && key !== 'fairness_index' && (
+                        <AnimatedValue
+                          value={a.data[key]}
+                          formatFn={(v) => formatValue(key, v)}
+                          skip={key === 'starved_count'}
+                        />
+                        {meta.unit && !['%'].includes(meta.unit) && key !== 'fairness_index' && (
                           <span className="text-xs text-[#475569] ml-1">{meta.unit}</span>
                         )}
                       </td>
@@ -185,7 +262,10 @@ export default function MetricsPanel({ metrics }) {
               <td className="px-4 py-3 text-center">
                 <div className="flex flex-col items-center">
                   <span className="text-lg font-bold text-[#f1f5f9] animate-pulse-glow">
-                    {metrics.iris.composite_score?.toFixed(2) ?? 'N/A'}
+                    <AnimatedValue
+                      value={metrics.iris.composite_score}
+                      formatFn={(v) => v?.toFixed(2) ?? 'N/A'}
+                    />
                   </span>
                   <div className="w-16 h-1 bg-[#0f0f1e] rounded-full mt-1 overflow-hidden">
                     <div
@@ -198,7 +278,10 @@ export default function MetricsPanel({ metrics }) {
               <td className="px-4 py-3 text-center">
                 <div className="flex flex-col items-center">
                   <span className="text-lg font-bold text-[#f1f5f9] animate-pulse-glow">
-                    {metrics.round_robin.composite_score?.toFixed(2) ?? 'N/A'}
+                    <AnimatedValue
+                      value={metrics.round_robin.composite_score}
+                      formatFn={(v) => v?.toFixed(2) ?? 'N/A'}
+                    />
                   </span>
                   <div className="w-16 h-1 bg-[#0f0f1e] rounded-full mt-1 overflow-hidden">
                     <div
@@ -211,7 +294,10 @@ export default function MetricsPanel({ metrics }) {
               <td className="px-4 py-3 text-center">
                 <div className="flex flex-col items-center">
                   <span className="text-lg font-bold text-[#f1f5f9] animate-pulse-glow">
-                    {metrics.sjf.composite_score?.toFixed(2) ?? 'N/A'}
+                    <AnimatedValue
+                      value={metrics.sjf.composite_score}
+                      formatFn={(v) => v?.toFixed(2) ?? 'N/A'}
+                    />
                   </span>
                   <div className="w-16 h-1 bg-[#0f0f1e] rounded-full mt-1 overflow-hidden">
                     <div
@@ -240,10 +326,10 @@ export default function MetricsPanel({ metrics }) {
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-3">
             {[
-              { label: 'Starvation Prevention', weight: 30, color: '#10b981' },
-              { label: "Jain's Fairness Index", weight: 30, color: '#6366f1' },
-              { label: 'CPU Utilization', weight: 25, color: '#f59e0b' },
-              { label: 'Wait Time Efficiency', weight: 15, color: '#06b6d4' },
+              { label: 'Starvation Prevention', weight: 30, color: '#10b981', delay: 0 },
+              { label: "Jain's Fairness Index", weight: 30, color: '#6366f1', delay: 150 },
+              { label: 'CPU Utilization', weight: 25, color: '#f59e0b', delay: 300 },
+              { label: 'Wait Time Efficiency', weight: 15, color: '#06b6d4', delay: 450 },
             ].map((w) => (
               <div key={w.label} className="space-y-1">
                 <div className="flex justify-between text-xs text-[#94a3b8]">
@@ -256,8 +342,9 @@ export default function MetricsPanel({ metrics }) {
                   <div
                     className="h-full rounded-full"
                     style={{
-                      width: `${w.weight * 3.33}%`,
+                      width: barsVisible ? `${w.weight * 3.33}%` : '0%',
                       backgroundColor: w.color,
+                      transition: `width 1000ms ease-out ${w.delay}ms`,
                     }}
                   />
                 </div>

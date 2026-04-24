@@ -102,7 +102,7 @@ def run_iris(processes: list[dict],
             "waiting_time": float(round(waiting_time, 2)),
             "turnaround_time": float(round(turnaround, 2)),
             "completion_time": float(round(end, 2)),
-            "starved": False,  # IRIS never starves
+            "starved": False,  # placeholder — recomputed by metrics.detect_starvation()
         })
 
         current_time = end
@@ -272,4 +272,5 @@ def run_sjf(processes: list[dict],
         "algorithm": "SJF",
         "gantt": gantt,
         "process_metrics": process_metrics,
+        "avg_burst": avg_burst,
     }

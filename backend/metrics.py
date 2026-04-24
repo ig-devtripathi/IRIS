@@ -44,23 +44,17 @@ def compute_all(results: dict) -> dict:
         cpu_shares = [entry['end'] - entry['start'] for entry in gantt]
         fairness = jains_fairness_index(cpu_shares)
 
-        # Detect starvation — skip for IRIS, it cannot starve by design
-        if key == "iris":
-            starved_count = 0
-        else:
-            # Use avg_burst from simulator if available (correct for RR),
-            # otherwise fall back to computing from gantt
-            avg_burst = algo_result.get('avg_burst')
-            if avg_burst is None:
-                if gantt:
-                    avg_burst = sum(entry['end'] - entry['start']
-                                    for entry in gantt) / len(gantt)
-                else:
-                    avg_burst = 0.0
-            process_metrics = detect_starvation(process_metrics, avg_burst)
-            starved_count = sum(
-                1 for m in process_metrics if m.get('starved')
-            )
+        # Starvation detection — applies to all algorithms uniformly
+        avg_burst = algo_result.get('avg_burst')
+        if avg_burst is None:
+            if gantt:
+                avg_burst = sum(entry['end'] - entry['start']
+                                for entry in gantt) / len(gantt)
+            else:
+                avg_burst = 0.0
+        process_metrics = detect_starvation(process_metrics, avg_burst)
+        starved_count = sum(
+            1 for m in process_metrics if m.get('starved'))
 
         metrics_out[key] = {
             "avg_waiting_time": round(avg_wt, 2),

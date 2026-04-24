@@ -26,11 +26,7 @@ function GanttChart({ title, ganttData, maxEnd, badge }) {
     <div className="rounded-lg border border-[#1e1e3a] bg-[#0a0a14] p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-[#f1f5f9]">{title}</h3>
-        {badge && (
-          <span className="text-xs px-2 py-0.5 rounded-full border border-[#10b981]/30 text-[#10b981] bg-[#10b981]/10">
-            {badge}
-          </span>
-        )}
+        {badge}
       </div>
 
       <div className="relative overflow-x-auto">
@@ -110,8 +106,20 @@ function GanttSVG({ rows, maxEnd }) {
                   rx={3}
                   ry={3}
                   opacity={0.85}
-                  className="hover:opacity-100 hover:brightness-125 hover:drop-shadow-lg transition-all cursor-pointer"
+                  className="cursor-pointer"
+                  style={{ pointerEvents: 'all' }}
                 >
+                  <animate
+                    attributeName="width"
+                    from="0"
+                    to={w}
+                    dur="600ms"
+                    begin={`${rowIdx * 80}ms`}
+                    fill="freeze"
+                    calcMode="spline"
+                    keySplines="0 0 0.2 1"
+                    keyTimes="0;1"
+                  />
                   <title>
                     PID {seg.pid} — {seg.name}: {seg.start.toFixed(1)}ms → {seg.end.toFixed(1)}ms
                     {'\n'}Duration: {(seg.end - seg.start).toFixed(1)}ms
@@ -161,7 +169,7 @@ function GanttSVG({ rows, maxEnd }) {
   );
 }
 
-export default function GanttPanel({ results, timeQuantum }) {
+export default function GanttPanel({ results, metrics, timeQuantum }) {
   const { iris, round_robin, sjf } = results;
 
   // Compute shared max end time (RULE 9)
@@ -192,17 +200,37 @@ export default function GanttPanel({ results, timeQuantum }) {
           title="IRIS — Fuzzy Scheduler"
           ganttData={iris.gantt}
           maxEnd={maxEnd}
-          badge="✓ Starvation-Free"
+          badge={
+            metrics?.iris?.starved_count === 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#10b981]/10 border border-[#10b981]/30 text-[#10b981]">
+                ✓ Starvation-Free
+              </span>
+            )
+          }
         />
         <GanttChart
           title={`Round Robin (Quantum: ${timeQuantum}ms)`}
           ganttData={round_robin.gantt}
           maxEnd={maxEnd}
+          badge={
+            metrics?.round_robin?.starved_count > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ef4444]/10 border border-[#ef4444]/30 text-[#ef4444]">
+                ⚠ {metrics.round_robin.starved_count} Starved
+              </span>
+            )
+          }
         />
         <GanttChart
           title="SJF — Shortest Job First"
           ganttData={sjf.gantt}
           maxEnd={maxEnd}
+          badge={
+            metrics?.sjf?.starved_count > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ef4444]/10 border border-[#ef4444]/30 text-[#ef4444]">
+                ⚠ {metrics.sjf.starved_count} Starved
+              </span>
+            )
+          }
         />
       </div>
     </div>

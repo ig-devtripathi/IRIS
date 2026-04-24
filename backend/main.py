@@ -8,6 +8,8 @@ from contextlib import asynccontextmanager
 from typing import Optional, Literal
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 import config
 import data_layer
@@ -41,7 +43,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.CORS_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -158,3 +160,9 @@ async def get_preset(name: str):
         }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+# Serve React frontend — must be last, after ALL routes
+dist_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+if os.path.exists(dist_path):
+    app.mount("/", StaticFiles(directory=dist_path, html=True), name="static")

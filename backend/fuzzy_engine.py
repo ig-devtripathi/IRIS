@@ -61,7 +61,9 @@ def build_system(mode: str = "pure") -> ctrl.ControlSystem:
                     score['high'])
     R06 = ctrl.Rule(priority['medium'] & burst['short'],
                     score['medium'])
-    R07 = ctrl.Rule(priority['low'] & burst['long'],
+    # R07: Only penalize low priority + long burst when waiting is LOW
+    # Once waiting becomes high, anti-starvation rules override with very_high boost
+    R07 = ctrl.Rule(priority['low'] & burst['long'] & waiting_time['low'],
                     score['low'])
     R08 = ctrl.Rule(waiting_time['low'] & burst['long'],
                     score['very_low'])
@@ -72,21 +74,14 @@ def build_system(mode: str = "pure") -> ctrl.ControlSystem:
         waiting_time['high'] & burst['long'],
         score['high']
     )
-    # R14: ANY process waiting too long → very_high (strong aging boost)
-    # This guarantees no process starves — it will eventually become top priority
+    # R14: ANY process waiting too long -> medium (standard aging boost)
     R14 = ctrl.Rule(
         waiting_time['high'],
-        score['very_high']
-    )
-    # R15: Long wait + low priority → very_high (forces starving low-priority jobs forward)
-    # Even if burst is short/medium, low-priority processes that waited long get urgent boost
-    R15 = ctrl.Rule(
-        waiting_time['high'] & priority['low'],
-        score['very_high']
+        score['medium']
     )
 
     shared_rules = [R01, R02, R03, R04, R05,
-                    R06, R07, R08, R13, R14, R15]
+                    R06, R07, R08, R13, R14]
 
     if mode == "ai":
         # --- AI mode: add behavior_score antecedent ---
@@ -110,7 +105,9 @@ def build_system(mode: str = "pure") -> ctrl.ControlSystem:
         # --- Pure mode: burst/priority interaction rules ---
         R09p = ctrl.Rule(burst['short'] & priority['medium'],
                          score['medium'])
-        R10p = ctrl.Rule(burst['medium'] & priority['low'],
+        # R10p: Only penalize medium burst + low priority when waiting is LOW
+        # Avoids punishing starving low-priority processes that have waited long
+        R10p = ctrl.Rule(burst['medium'] & priority['low'] & waiting_time['low'],
                          score['low'])
         R11p = ctrl.Rule(burst['long'] & priority['high'],
                          score['medium'])
@@ -152,8 +149,7 @@ def score_processes(processes: list[dict],
             "R11: behavior[mixed] & waiting_time[medium] → medium",
             "R12: priority[low] & waiting_time[low] → very_low",
             "R13: waiting_time[high] & burst[long] → high",
-            "R14: waiting_time[high] → very_high",
-            "R15: waiting_time[high] & priority[low] → very_high",
+            "R14: waiting_time[high] → medium",
         ]
     else:
         rule_descriptions = [
@@ -170,8 +166,7 @@ def score_processes(processes: list[dict],
             "R11p: burst[long] & priority[high] → medium",
             "R12p: priority[low] & waiting_time[low] → very_low",
             "R13: waiting_time[high] & burst[long] → high",
-            "R14: waiting_time[high] → very_high",
-            "R15: waiting_time[high] & priority[low] → very_high",
+            "R14: waiting_time[high] → medium",
         ]
 
     for p in processes:
@@ -226,10 +221,6 @@ def _build_rule_log(wt: float, bt: float, pr: float,
             log.append(rule_descriptions[1])
         if 20 <= bt <= 80:
             log.append(rule_descriptions[2])
-        if pr < 4:
-            # R15: high wait + low priority → very_high (anti-starvation)
-            # R15 is always last entry in rule_descriptions (shared_rules tail)
-            log.append(rule_descriptions[-1])
     if 20 <= wt <= 80 and pr > 6:
         log.append(rule_descriptions[3])
 

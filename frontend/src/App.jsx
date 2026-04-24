@@ -409,11 +409,11 @@ export default function App() {
     skeletonStartRef.current = Date.now();
   });
 
-  // On mount: check health (starts during splash)
+  // On mount: check health (starts during splash) + start polling
   useEffect(() => {
     let cancelled = false;
 
-    // 15-second hard timeout
+    // 15-second hard timeout for initial splash
     const timeout = setTimeout(() => {
       if (!healthResolvedRef.current && !cancelled) {
         healthResolvedRef.current = true;
@@ -421,23 +421,30 @@ export default function App() {
       }
     }, 15000);
 
-    getHealth()
-      .then((h) => {
+    const checkHealth = async () => {
+      try {
+        const h = await getHealth();
         if (cancelled) return;
+        
         healthResolvedRef.current = true;
         setHealth(h);
-        clearTimeout(timeout);
-      })
-      .catch(() => {
+        if (h) clearTimeout(timeout);
+      } catch {
         if (cancelled) return;
         healthResolvedRef.current = true;
         setHealth(null);
-        clearTimeout(timeout);
-      });
+      }
+    };
+
+    checkHealth();
+    
+    // Poll every 15 seconds for "real-time" status
+    const interval = setInterval(checkHealth, 15000);
 
     return () => {
       cancelled = true;
       clearTimeout(timeout);
+      clearInterval(interval);
     };
   }, []);
 

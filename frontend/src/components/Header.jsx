@@ -1,13 +1,30 @@
 import React from 'react';
 
 export default function Header({ health, data }) {
-  const isBackendUp = health?.services?.fuzzy_engine === 'initialized';
-
   const formatTime = (timestamp) => {
     if (!timestamp) return null;
     const d = new Date(timestamp);
     return d.toLocaleTimeString('en-US', { hour12: false });
   };
+
+  // Logic for real-time status indicator
+  let statusColor = 'bg-[#475569]'; // Default: Offline/Gray
+  let statusText = 'Sleeping';
+  let isHealthy = false;
+
+  if (health) {
+    if (health.status === 'healthy') {
+      statusColor = 'bg-[#10b981]'; // Green: Good
+      statusText = 'Online';
+      isHealthy = true;
+    } else {
+      statusColor = 'bg-[#ef4444]'; // Red: Server error
+      statusText = 'Error';
+    }
+  } else {
+    // If health is null, server is either starting, sleeping, or off
+    statusText = 'Offline';
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-[#0f0f1e]/80 backdrop-blur-md relative border-b border-[#1e1e3a]">
@@ -30,18 +47,19 @@ export default function Header({ health, data }) {
           {/* Backend status */}
           <div className="flex items-center gap-2">
             <div className="relative">
-              <div className={`w-2.5 h-2.5 rounded-full ${isBackendUp ? 'bg-[#10b981]' : 'bg-[#ef4444]'}`} />
-              {isBackendUp && (
+              <div className={`w-2.5 h-2.5 rounded-full transition-colors duration-500 ${statusColor}`} />
+              {isHealthy && (
                 <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-[#10b981] animate-ping opacity-40" />
               )}
             </div>
-            <span className="text-xs text-[#94a3b8]">Backend</span>
+            <span className="text-xs text-[#94a3b8] min-w-[50px]">{statusText}</span>
           </div>
 
           {/* Version pill */}
           <span className="text-xs px-2.5 py-1 rounded-full bg-[#161628] border border-[#1e1e3a] text-[#94a3b8] font-mono">
             v2.1.0
           </span>
+
           {/* Last run timestamp */}
           {data?.meta?.timestamp && (
             <span className="text-xs text-[#475569] font-mono">

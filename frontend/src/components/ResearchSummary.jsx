@@ -23,7 +23,7 @@ export default function ResearchSummary({ summary, meta }) {
       } else {
         setDisplayedText(summary.slice(0, charIndex));
       }
-    }, 18);
+    }, 8);
 
     return () => {
       if (intervalRef.current) {

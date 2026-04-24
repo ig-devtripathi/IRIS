@@ -47,7 +47,7 @@ Auto-generated Swagger documentation available at `http://localhost:8000/docs`.
 **Notes:**
 - If `preset` is provided, `source` is ignored — preset overrides data source
 - If `source` is "live", `n_processes` is used as limit for psutil
-- If `mode` is "pure", Gemini/Groq are never called regardless of availability
+- If `mode` is "pure", Groq/Gemini are never called regardless of availability
 
 ---
 

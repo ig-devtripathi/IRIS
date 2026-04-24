@@ -47,28 +47,26 @@ export default function ControlPanel({ controls, setControls, onRun, loading }) 
           <div className="flex items-center justify-between mb-2">
             <label className="text-sm font-semibold text-[#f1f5f9]">AI Enhancement</label>
             <span className="text-xs text-[#475569]">
-              {controls.mode === 'pure' ? 'OFF = Pure Fuzzy Logic only' : 'ON = Gemini/Groq classification'}
+              {controls.mode === 'pure' ? 'OFF = Pure Fuzzy Logic only' : 'ON = Groq/Gemini classification'}
             </span>
           </div>
           <div className="flex rounded-lg bg-[#161628] p-1">
             <button
               onClick={() => setControls({ ...controls, mode: 'pure' })}
               disabled={isPresetActive ? false : false}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                controls.mode === 'pure'
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${controls.mode === 'pure'
                   ? 'bg-[#3b82f6] text-white shadow-[0_0_12px_rgba(59,130,246,0.4)] scale-[1.02]'
                   : 'text-[#94a3b8] hover:text-[#f1f5f9]'
-              }`}
+                }`}
             >
               <span>≈</span> Pure Fuzzy
             </button>
             <button
               onClick={() => setControls({ ...controls, mode: 'ai' })}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                controls.mode === 'ai'
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${controls.mode === 'ai'
                   ? 'bg-[#10b981] text-white shadow-[0_0_12px_rgba(16,185,129,0.4)] scale-[1.02]'
                   : 'text-[#94a3b8] hover:text-[#f1f5f9]'
-              }`}
+                }`}
             >
               <span>✦</span> AI Enhanced
             </button>
@@ -87,22 +85,20 @@ export default function ControlPanel({ controls, setControls, onRun, loading }) 
             <button
               onClick={() => setControls({ ...controls, source: 'simulated' })}
               disabled={isPresetActive}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                controls.source === 'simulated'
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${controls.source === 'simulated'
                   ? 'bg-[#8b5cf6] text-white shadow-[0_0_12px_rgba(139,92,246,0.4)] scale-[1.02]'
                   : 'text-[#94a3b8] hover:text-[#f1f5f9]'
-              }`}
+                }`}
             >
               Simulated <span className="text-xs opacity-60">PID 1001+</span>
             </button>
             <button
               onClick={() => setControls({ ...controls, source: 'live' })}
               disabled={isPresetActive}
-              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                controls.source === 'live'
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${controls.source === 'live'
                   ? 'bg-[#06b6d4] text-white shadow-[0_0_12px_rgba(6,182,212,0.4)] scale-[1.02]'
                   : 'text-[#94a3b8] hover:text-[#f1f5f9]'
-              }`}
+                }`}
             >
               <span className="relative flex items-center gap-1">
                 {controls.source === 'live' && (
@@ -138,11 +134,10 @@ export default function ControlPanel({ controls, setControls, onRun, loading }) 
               onClick={() =>
                 setControls({ ...controls, preset: p.key, source: 'simulated' })
               }
-              className={`rounded-lg border p-4 text-left transition-all duration-200 hover:scale-[1.01] ${
-                controls.preset === p.key
+              className={`rounded-lg border p-4 text-left transition-all duration-200 hover:scale-[1.01] ${controls.preset === p.key
                   ? `${p.activeBg} ring-2 ${p.ring} border-transparent`
                   : 'border-[#1e1e3a] bg-[#080810] hover:border-[#2d2d5e]'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">{p.icon}</span>
@@ -222,11 +217,10 @@ export default function ControlPanel({ controls, setControls, onRun, loading }) 
       <button
         onClick={onRun}
         disabled={loading}
-        className={`w-full py-4 rounded-xl font-bold text-base transition-all duration-200 flex items-center justify-center gap-3 ${
-          loading
+        className={`w-full py-4 rounded-xl font-bold text-base transition-all duration-200 flex items-center justify-center gap-3 ${loading
             ? 'bg-[#6366f1]/50 cursor-not-allowed opacity-70'
             : 'btn-run-animated text-white glow-primary-strong cursor-pointer hover:scale-[1.01]'
-        }`}
+          }`}
       >
         {loading ? (
           <>

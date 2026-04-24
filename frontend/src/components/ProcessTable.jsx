@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 export default function ProcessTable({ processes, mode }) {
   const [expandedPid, setExpandedPid] = useState(null);
   const [sortAsc, setSortAsc] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(0);
 
   const isAi = mode === 'ai';
 
@@ -13,6 +14,15 @@ export default function ProcessTable({ processes, mode }) {
         : b.scheduling_score - a.scheduling_score
     );
   }, [processes, sortAsc]);
+
+  // Step 8: Staggered row reveal via setTimeout instead of CSS animation fill-mode
+  useEffect(() => {
+    setVisibleCount(0);
+    const timers = sorted.map((_, i) =>
+      setTimeout(() => setVisibleCount((prev) => Math.max(prev, i + 1)), i * 50)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [sorted]);
 
   const getPriorityBadge = (p) => {
     if (p >= 8) return { bg: 'bg-[#ef4444]/15', text: 'text-[#ef4444]', border: 'border-[#ef4444]/30' };
@@ -81,15 +91,17 @@ export default function ProcessTable({ processes, mode }) {
               const prioBadge = getPriorityBadge(proc.priority);
               const workBadge = getWorkloadBadge(proc.workload_type);
               const isExpanded = expandedPid === proc.pid;
+              const isVisible = i < visibleCount;
 
               return (
                 <React.Fragment key={proc.pid}>
                   <tr
                     onClick={() => setExpandedPid(isExpanded ? null : proc.pid)}
-                    className={`border-b border-[#1e1e3a]/50 cursor-pointer transition-all duration-200 hover:border-l-[2px] hover:border-l-[#6366f1] animate-fadeIn opacity-0 ${
+                    className={`border-b border-[#1e1e3a]/50 cursor-pointer transition-all duration-300 hover:border-l-[2px] hover:border-l-[#6366f1] ${
+                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+                    } ${
                       isExpanded ? 'bg-[#161628] border-l-[2px] border-l-[#6366f1]' : 'hover:bg-[#161628]/50 border-l-[2px] border-l-transparent'
                     }`}
-                    style={{ animationDelay: `${i * 0.05}s`, animationFillMode: 'forwards' }}
                   >
                     <td className="px-4 py-3 font-mono text-[#06b6d4] text-xs">{proc.pid}</td>
                     <td className="px-4 py-3 text-[#f1f5f9] font-medium">{proc.name}</td>
@@ -128,9 +140,7 @@ export default function ProcessTable({ processes, mode }) {
                           {workBadge.label}
                         </span>
                       ) : (
-                        <span className="text-[#475569] font-mono text-xs">
-                          —
-                        </span>
+                        <span className="text-[#475569] font-mono text-xs">—</span>
                       )}
                     </td>
                     {isAi && (
@@ -170,9 +180,9 @@ export default function ProcessTable({ processes, mode }) {
                           <p className="text-xs font-bold tracking-widest uppercase text-[#475569] mb-2">
                             Fired Rules — PID {proc.pid}
                           </p>
-                          {proc.rule_log.map((rule, i) => (
+                          {proc.rule_log.map((rule, idx) => (
                             <div
-                              key={i}
+                              key={idx}
                               className="font-mono text-xs px-3 py-2 rounded-lg bg-[#161628] border border-[#1e1e3a] text-[#94a3b8]"
                             >
                               {highlightRule(rule)}
@@ -206,11 +216,9 @@ export default function ProcessTable({ processes, mode }) {
 }
 
 function highlightRule(rule) {
-  // Parse rule: "R01: waiting_time[high] & priority[high] → very_high"
   const parts = [];
   let remaining = rule;
 
-  // Highlight Rule ID
   const ruleIdMatch = remaining.match(/^(R\d+\w*:?)/);
   if (ruleIdMatch) {
     parts.push(
@@ -221,7 +229,6 @@ function highlightRule(rule) {
     remaining = remaining.slice(ruleIdMatch[1].length);
   }
 
-  // Highlight linguistic terms in brackets
   const segments = remaining.split(/(\[.*?\]|→)/g);
   segments.forEach((seg, i) => {
     if (seg.startsWith('[') && seg.endsWith(']')) {

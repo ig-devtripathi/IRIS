@@ -6,11 +6,15 @@ RUN apt-get update && apt-get install -y curl && \
     apt-get install -y nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# Create a non-root user (Required for Hugging Face best practices)
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
+
 WORKDIR /app
 
-# Copy entire project
-COPY . .
+# Copy project files with correct ownership
+COPY --chown=user . .
 
 # Build React frontend
 WORKDIR /app/frontend

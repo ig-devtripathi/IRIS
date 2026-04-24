@@ -1,6 +1,6 @@
 # API Contracts
 ## IRIS — Intelligent Resource Inference Scheduler
-**Version:** 2.0 | **Author:** Devraj Tripathi | **Date:** April 2026
+**Version:** 2.1.0 | **Author:** Devraj Tripathi | **Date:** April 2026
 
 ---
 

@@ -23,7 +23,7 @@ STARVATION_THRESHOLD = 2.0
 CORS_ORIGINS = ["http://localhost:5173", "http://localhost:3000"]
 
 # App identity
-VERSION = "1.0.0"
+VERSION = "2.1.0"
 APP_TITLE = "IRIS — Intelligent Resource Inference Scheduler"
 
 # Fuzzy universe constants

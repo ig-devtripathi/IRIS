@@ -40,9 +40,8 @@ export default function Header({ health, data }) {
 
           {/* Version pill */}
           <span className="text-xs px-2.5 py-1 rounded-full bg-[#161628] border border-[#1e1e3a] text-[#94a3b8] font-mono">
-            v1.0.0
+            v2.1.0
           </span>
-
           {/* Last run timestamp */}
           {data?.meta?.timestamp && (
             <span className="text-xs text-[#475569] font-mono">

@@ -91,14 +91,39 @@ GROQ_API_KEY=your_groq_key
 
 ---
 
-## Research Contribution
+---
 
-IRIS demonstrates that Mamdani fuzzy inference, when operating on normalized OS-level process attributes, produces scheduling decisions that are competitive with classical algorithms while providing three capabilities classical schedulers fundamentally cannot offer:
+## Version Evolution
 
-1. **Graceful handling of uncertainty** — approximate burst times don't break the system
-2. **Explainability** — every decision traces back to a human-readable fuzzy rule
-3. **Starvation prevention** — fuzzy aging is native to the inference logic, not bolted on
+IRIS has evolved through several research phases, each increasing in complexity and robustness:
+
+### **v1.0.0 — The Fuzzy Foundation**
+- Implementation of the core Mamdani Fuzzy Inference System (FIS).
+- Basic 11-rule base focused on Priority and Burst Time.
+- Preemptive scheduling logic with fixed time-quantum.
+- Jain's Fairness Index integration.
+
+### **v2.0.0 — AI Semantic Awareness**
+- Introduction of the **AI Enhanced Mode**.
+- Integration of **Gemini 2.0 Flash** for semantic workload classification.
+- Real-time conversion of string-based workload types into numeric behavior scores.
+- High-fidelity Gantt visualization with persistent PID coloring.
+
+### **v2.1.0 — Stable Inference (Current)**
+- **Composite AI Pipeline**: Implemented a robust fallback chain (Groq Llama 3.3 → Gemini → Heuristic).
+- **Starvation-Free Logic**: Transitioned to an optimized non-preemptive model with **dynamic aging rules** ($R14$, $R15$) that guarantee zero starvation.
+- **Enhanced UX**: Reduced typewriter latency (8ms) and optimized UI for "Stable Run" visualization.
+- **Production Polish**: Alignment of all labels to reflect the "Groq/Gemini" priority stack.
 
 ---
+
+## Technical Appendix: AI Fallback Chain
+
+To ensure 100% uptime, IRIS v2.1.0 uses a tiered intelligence strategy:
+1. **Tier 1 (Groq)**: Ultra-low latency classification using Llama 3.3 70B.
+2. **Tier 2 (Gemini)**: High-reasoning fallback if Groq API rate limits are hit.
+3. **Tier 3 (Heuristic)**: Rule-based keyword matching if all cloud APIs are unreachable.
+4. **Tier 4 (Safe Default)**: Default "Neutral" score to ensure the simulation never crashes.
+
 
 

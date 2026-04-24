@@ -6,6 +6,10 @@ RUN apt-get update && apt-get install -y curl && \
     apt-get install -y nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install Python dependencies
+COPY backend/requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
 # Create a non-root user (Required for Hugging Face best practices)
 RUN useradd -m -u 1000 user
 USER user
@@ -20,9 +24,8 @@ COPY --chown=user . .
 WORKDIR /app/frontend
 RUN npm install && npm run build
 
-# Install Python dependencies
+# Final setup
 WORKDIR /app/backend
-RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose Hugging Face required port
 EXPOSE 7860

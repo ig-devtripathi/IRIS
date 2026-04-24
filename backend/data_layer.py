@@ -1,7 +1,7 @@
 import psutil
 import numpy as np
 import copy
-import config
+import iris_config as config
 
 
 def get_live_processes(limit: int = 15) -> list[dict]:

@@ -3,7 +3,7 @@ from google.genai import types
 from google.genai.errors import APIError
 from groq import Groq
 import json
-import config
+import iris_config as config
 import logging
 import fuzzy_engine
 

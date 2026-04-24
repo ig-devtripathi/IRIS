@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-import config
+import iris_config as config
 import data_layer
 import gemini_engine
 import fuzzy_engine
@@ -20,6 +20,15 @@ import metrics
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+logger.info("Starting IRIS Backend...")
+logger.info(f"Current Directory: {os.getcwd()}")
+logger.info(f"Directory Contents: {os.listdir('.')}")
+try:
+    import iris_config
+    logger.info(f"Successfully imported iris_config. Version: {iris_config.VERSION}")
+except Exception as e:
+    logger.error(f"Failed to import iris_config: {e}")
 
 # Module-level globals
 fis_pure = None

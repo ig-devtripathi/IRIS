@@ -1,5 +1,5 @@
 import copy
-import config
+import iris_config as config
 import fuzzy_engine
 
 GANTT_COLORS = [

@@ -74,14 +74,20 @@ def build_system(mode: str = "pure") -> ctrl.ControlSystem:
         waiting_time['high'] & burst['long'],
         score['high']
     )
-    # R14: ANY process waiting too long -> medium (standard aging boost)
+    # R14: ANY process waiting too long -> very_high (strong aging boost)
+    # This ensures IRIS is starvation-free as waiting time eventually overrides all
     R14 = ctrl.Rule(
         waiting_time['high'],
-        score['medium']
+        score['very_high']
+    )
+    # R15: Long wait + low priority -> very_high (anti-starvation for low-priority tasks)
+    R15 = ctrl.Rule(
+        waiting_time['high'] & priority['low'],
+        score['very_high']
     )
 
     shared_rules = [R01, R02, R03, R04, R05,
-                    R06, R07, R08, R13, R14]
+                    R06, R07, R08, R13, R14, R15]
 
     if mode == "ai":
         # --- AI mode: add behavior_score antecedent ---
@@ -149,7 +155,8 @@ def score_processes(processes: list[dict],
             "R11: behavior[mixed] & waiting_time[medium] → medium",
             "R12: priority[low] & waiting_time[low] → very_low",
             "R13: waiting_time[high] & burst[long] → high",
-            "R14: waiting_time[high] → medium",
+            "R14: waiting_time[high] → very_high",
+            "R15: waiting_time[high] & priority[low] → very_high",
         ]
     else:
         rule_descriptions = [
@@ -166,7 +173,8 @@ def score_processes(processes: list[dict],
             "R11p: burst[long] & priority[high] → medium",
             "R12p: priority[low] & waiting_time[low] → very_low",
             "R13: waiting_time[high] & burst[long] → high",
-            "R14: waiting_time[high] → medium",
+            "R14: waiting_time[high] → very_high",
+            "R15: waiting_time[high] & priority[low] → very_high",
         ]
 
     for p in processes:
@@ -219,8 +227,12 @@ def _build_rule_log(wt: float, bt: float, pr: float,
             log.append(rule_descriptions[0])
         if bt < 35:
             log.append(rule_descriptions[1])
-        if 20 <= bt <= 80:
-            log.append(rule_descriptions[2])
+        if wt > 80:
+            log.append(rule_descriptions[13])  # R14
+            if pr < 4:
+                log.append(rule_descriptions[14])  # R15
+    if wt > 50:
+        log.append(rule_descriptions[13])  # R14 (early aging boost)
     if 20 <= wt <= 80 and pr > 6:
         log.append(rule_descriptions[3])
 
